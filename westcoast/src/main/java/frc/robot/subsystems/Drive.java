@@ -4,10 +4,10 @@
 
 package frc.robot.subsystems;
 
-import org.ejml.equation.Variable;
-
 import com.revrobotics.spark.SparkMax;
 
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -15,9 +15,6 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
-import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
@@ -35,12 +32,11 @@ public class Drive extends SubsystemBase {
   private Encoder rightEncoder;
   private final DifferentialDrive drive;
   DifferentialDriveKinematics kinematics;
-  DifferentialDriveWheelSpeeds wheelSpeeds;
   DifferentialDriveOdometry odometry;
-  ChassisSpeeds chassisSpeeds;
-  double leftVelocity;
-  double rightVelocity;
   AnalogGyro gyro;
+  private PIDController leftpid;
+  private PIDController rightpid;
+  SimpleMotorFeedforward feedforward;
 
   private static Drive instance;
 
@@ -58,11 +54,7 @@ public class Drive extends SubsystemBase {
     followRightMotor = Constants.DriveConstants.FollowRightMotor.createSparkMax();
 
     kinematics = new DifferentialDriveKinematics(Constants.DriveConstants.TRACKWIDTH);
-    chassisSpeeds = new ChassisSpeeds();
-    wheelSpeeds = kinematics.toWheelSpeeds(chassisSpeeds);
-    leftVelocity = wheelSpeeds.leftMetersPerSecond;
-    rightVelocity = wheelSpeeds.rightMetersPerSecond;
-
+    
     leftEncoder = new Encoder(0,1);
     rightEncoder = new Encoder(2, 3);
     leftEncoder.reset();
@@ -73,7 +65,34 @@ public class Drive extends SubsystemBase {
     gyro.reset();
     odometry = new DifferentialDriveOdometry
     (gyro.getRotation2d(), rightEncoder.getDistance(), leftEncoder.getDistance(), new Pose2d(0,0, new Rotation2d()));
+
+    leftpid = new PIDController(1, 0, 0);
+    rightpid = new PIDController(1, 0, 0);
+    feedforward = new SimpleMotorFeedforward(0, 0);
+
     drive = new DifferentialDrive(leadLeftMotor, leadRightMotor);
+  }
+
+  public void setSpeeds(DifferentialDriveWheelSpeeds speeds) {
+    final double leftFeedforward = feedforward.calculate(speeds.leftMetersPerSecond);
+    final double rightFeedforward = feedforward.calculate(speeds.rightMetersPerSecond);
+
+    final double leftOutput =
+        leftpid.calculate(leftEncoder.getRate(), speeds.leftMetersPerSecond);
+    final double rightOutput =
+        rightpid.calculate(rightEncoder.getRate(), speeds.rightMetersPerSecond);
+    leadLeftMotor.setVoltage(leftOutput + leftFeedforward);
+    leadRightMotor.setVoltage(rightOutput + rightFeedforward);
+  }
+
+  public void drive(double xSpeed, double rot) {
+    var wheelSpeeds = kinematics.toWheelSpeeds(new ChassisSpeeds(xSpeed, 0.0, rot));
+    setSpeeds(wheelSpeeds);
+  }
+
+  public void updateOdometry() {
+    odometry.update(
+        gyro.getRotation2d(), leftEncoder.getDistance(), rightEncoder.getDistance());
   }
 
   // public Command moveForward() {
@@ -108,10 +127,9 @@ public class Drive extends SubsystemBase {
   
   @Override
   public void periodic() {
-    // odometry.update(gyro.getRotation2d(), null);
-    var gryoAngle = gyro.getRotation2d();
-    var pose = odometry.update(gryoAngle,
-    leftEncoder.getDistance(),
-    rightEncoder.getDistance());
+    // var gryoAngle = gyro.getRotation2d();
+    // var pose = odometry.update(gryoAngle,
+    // leftEncoder.getDistance(),
+    // rightEncoder.getDistance())
   }
 }
