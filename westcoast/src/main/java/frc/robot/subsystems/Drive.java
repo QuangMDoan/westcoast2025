@@ -51,7 +51,7 @@ public class Drive extends SubsystemBase {
     // rightEncoder = new Encoder(3,4);
     // odometry = new SwerveDriveOdometry(null, gyro.getRotation2d(), null, null);
     // kinematics = new SwerveDriveKinematics(null);
-    // drive = new DifferentialDrive(leadLeftMotor, leadRightMotor);
+    drive = new DifferentialDrive(leadLeftMotor, leadRightMotor);
     // gyro = new AnalogGyro(1);
   }
 
