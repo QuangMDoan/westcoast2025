@@ -4,6 +4,8 @@
 
 package frc.robot;
 
+import poplib.src.main.java.poplib.motor.MotorConfig;
+
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
  * constants. This class should not be used for any other purpose. All constants should be declared
@@ -16,4 +18,40 @@ public final class Constants {
   public static class OperatorConstants {
     public static final int kDriverControllerPort = 0;
   }
+
+  public static class Swerve {
+
+    public static final int SWERVEMOVESPEED = 1;
+    public static final int SWERVEREVERSESPEED = -1;
+
+    public static final MotorConfig LeadLeftMotor = new MotorConfig(
+      0,
+      20, 
+      true, 
+      poplib.src.main.java.poplib.motor.Mode.COAST
+    );
+
+    public static final MotorConfig FollowLeftMotor = new MotorConfig(
+      0,
+      20, 
+      true, 
+      poplib.src.main.java.poplib.motor.Mode.COAST
+    );
+
+    public static final MotorConfig LeadRightMotor = new MotorConfig(
+      0,
+      20, 
+      true, 
+      poplib.src.main.java.poplib.motor.Mode.COAST
+    );
+
+    public static final MotorConfig FollowRightMotor = new MotorConfig(
+      0,
+      20, 
+      true, 
+      poplib.src.main.java.poplib.motor.Mode.COAST
+    );
+
+  }
+
 }
