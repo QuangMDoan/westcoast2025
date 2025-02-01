@@ -131,5 +131,7 @@ public class Drive extends SubsystemBase {
     // var pose = odometry.update(gryoAngle,
     // leftEncoder.getDistance(),
     // rightEncoder.getDistance())
+    updateOdometry();
+
   }
 }
