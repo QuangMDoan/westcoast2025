@@ -38,7 +38,7 @@ public class RobotContainer {
     //   () -> -oi.getDriverButton(XboxController.Axis.kRightX),
     //   drive));
 
-    drive.setDefaultCommand(() -> );
+    
   }
 
   /**

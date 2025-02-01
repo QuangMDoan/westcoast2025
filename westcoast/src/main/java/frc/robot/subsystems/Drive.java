@@ -4,11 +4,20 @@
 
 package frc.robot.subsystems;
 
+import org.ejml.equation.Variable;
+
 import com.revrobotics.spark.SparkMax;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
+import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
+import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
@@ -25,13 +34,13 @@ public class Drive extends SubsystemBase {
   private Encoder leftEncoder;
   private Encoder rightEncoder;
   private final DifferentialDrive drive;
-  // SwerveDriveOdometry odometry;
-  // SwerveDriveKinematics kinematics;
-  // AnalogGyro gyro;
-  // Translation2d frontLeftLocation = new Translation2d(0.381, 0.381);
-  // Translation2d frontRightLocation = new Translation2d(0.381, -0.381);
-  // Translation2d backLeftLocation = new Translation2d(-0.381, 0.381);
-  // Translation2d backRightLocation = new Translation2d(-0.381, -0.381);
+  DifferentialDriveKinematics kinematics;
+  DifferentialDriveWheelSpeeds wheelSpeeds;
+  DifferentialDriveOdometry odometry;
+  ChassisSpeeds chassisSpeeds;
+  double leftVelocity;
+  double rightVelocity;
+  AnalogGyro gyro;
 
   private static Drive instance;
 
@@ -47,41 +56,50 @@ public class Drive extends SubsystemBase {
     followLeftMotor = Constants.DriveConstants.FollowLeftMotor.createSparkMax();
     leadRightMotor = Constants.DriveConstants.LeadRightMotor.createSparkMax();
     followRightMotor = Constants.DriveConstants.FollowRightMotor.createSparkMax();
-    // leftEncoder = new Encoder(1,2);
-    // rightEncoder = new Encoder(3,4);
-    // odometry = new SwerveDriveOdometry(null, gyro.getRotation2d(), null, null);
-    // kinematics = new SwerveDriveKinematics(null);
+
+    kinematics = new DifferentialDriveKinematics(Constants.DriveConstants.TRACKWIDTH);
+    chassisSpeeds = new ChassisSpeeds();
+    wheelSpeeds = kinematics.toWheelSpeeds(chassisSpeeds);
+    leftVelocity = wheelSpeeds.leftMetersPerSecond;
+    rightVelocity = wheelSpeeds.rightMetersPerSecond;
+
+    leftEncoder = new Encoder(0,1);
+    rightEncoder = new Encoder(2, 3);
+    leftEncoder.reset();
+    rightEncoder.reset();
+    leftEncoder.setDistancePerPulse(2 * Math.PI * Constants.DriveConstants.WHEELRADIUS / Constants.DriveConstants.ENCODERRESOLUTION);
+    rightEncoder.setDistancePerPulse(2 * Math.PI * Constants.DriveConstants.WHEELRADIUS / Constants.DriveConstants.ENCODERRESOLUTION);
+    gyro = new AnalogGyro(0);
+    gyro.reset();
+    odometry = new DifferentialDriveOdometry
+    (gyro.getRotation2d(), rightEncoder.getDistance(), leftEncoder.getDistance(), new Pose2d(0,0, new Rotation2d()));
     drive = new DifferentialDrive(leadLeftMotor, leadRightMotor);
-    // gyro = new AnalogGyro(1);
   }
 
-  public Command moveForward() {
-    return run(() -> {
-      leadLeftMotor.set(Constants.DriveConstants.DRIVEMOVESPEED);
-      leadRightMotor.set(Constants.DriveConstants.DRIVEMOVESPEED);
-    });
-  }
-
-  public Command moveBackward() {
-    return run(() -> {
-      leadLeftMotor.set(Constants.DriveConstants.DRIVEREVERSESPEED);
-      leadRightMotor.set(Constants.DriveConstants.DRIVEREVERSESPEED);
-    });
-  }
-
-  public Command rotateLeft() {
-    return run(() -> {
-      leadLeftMotor.set(Constants.DriveConstants.DRIVEREVERSESPEED);
-      leadRightMotor.set(Constants.DriveConstants.DRIVEMOVESPEED);
-    });
-  }
-
-  public Command rotateRight() {
-    return run(() -> {
-      leadLeftMotor.set(Constants.DriveConstants.DRIVEMOVESPEED);
-      leadRightMotor.set(Constants.DriveConstants.DRIVEREVERSESPEED);
-    });
-  }
+  // public Command moveForward() {
+  //   return run(() -> {
+  //     leadLeftMotor.set(Constants.DriveConstants.DRIVEMOVESPEED);
+  //     leadRightMotor.set(Constants.DriveConstants.DRIVEMOVESPEED);
+  //   });
+  // }
+  // public Command moveBackward() {
+  //   return run(() -> {
+  //     leadLeftMotor.set(Constants.DriveConstants.DRIVEREVERSESPEED);
+  //     leadRightMotor.set(Constants.DriveConstants.DRIVEREVERSESPEED);
+  //   });
+  // }
+  // public Command rotateLeft() {
+  //   return run(() -> {
+  //     leadLeftMotor.set(Constants.DriveConstants.DRIVEREVERSESPEED);
+  //     leadRightMotor.set(Constants.DriveConstants.DRIVEMOVESPEED);
+  //   });
+  // }
+  // public Command rotateRight() {
+  //   return run(() -> {
+  //     leadLeftMotor.set(Constants.DriveConstants.DRIVEMOVESPEED);
+  //     leadRightMotor.set(Constants.DriveConstants.DRIVEREVERSESPEED);
+  //   });
+  // }
 
    // sets the speed of the drive motors
   public void driveArcade(double xSpeed, double zRotation) {
@@ -91,5 +109,9 @@ public class Drive extends SubsystemBase {
   @Override
   public void periodic() {
     // odometry.update(gyro.getRotation2d(), null);
+    var gryoAngle = gyro.getRotation2d();
+    var pose = odometry.update(gryoAngle,
+    leftEncoder.getDistance(),
+    rightEncoder.getDistance());
   }
 }

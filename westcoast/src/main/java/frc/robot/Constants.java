@@ -19,10 +19,13 @@ public final class Constants {
     public static final int kDriverControllerPort = 0;
   }
 
-  public static class Swerve {
+  public static class DriveConstants {
 
-    public static final int SWERVEMOVESPEED = 1;
-    public static final int SWERVEREVERSESPEED = -1;
+    public static final int DRIVEMOVESPEED = 1;
+    public static final int DRIVEREVERSESPEED = -1;
+    public static final double TRACKWIDTH = 0;
+    public static final double WHEELRADIUS = 0;
+    public static final double ENCODERRESOLUTION = 0;
 
     public static final MotorConfig LeadLeftMotor = new MotorConfig(
       0,
@@ -41,14 +44,14 @@ public final class Constants {
     public static final MotorConfig LeadRightMotor = new MotorConfig(
       0,
       20, 
-      true, 
+      false, 
       poplib.src.main.java.poplib.motor.Mode.COAST
     );
 
     public static final MotorConfig FollowRightMotor = new MotorConfig(
       0,
       20, 
-      true, 
+      false, 
       poplib.src.main.java.poplib.motor.Mode.COAST
     );
 
