@@ -5,6 +5,10 @@
 package frc.robot;
 
 import poplib.src.main.java.poplib.motor.MotorConfig;
+import edu.wpi.first.math.controller.PIDController;
+import poplib.src.main.java.poplib.control.PIDConfig;
+import poplib.src.main.java.poplib.motor.FollowerConfig;
+import poplib.src.main.java.poplib.motor.Mode;
 
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
@@ -21,39 +25,42 @@ public final class Constants {
 
   public static class DriveConstants {
 
-    public static final int DRIVEMOVESPEED = 1;
-    public static final int DRIVEREVERSESPEED = -1;
-    public static final double TRACKWIDTH = 0;
-    public static final double WHEELRADIUS = 0;
-    public static final double ENCODERRESOLUTION = 0;
+    public static final int DRIVE_MOVE_SPEED = 1;
+    public static final int DRIVE_REVERSE_SPEED = -1;
+    public static final double TRACK_WIDTH = 0;
+    public static final double WHEEL_RADIUS = 0;
+    public static final double ENCODER_RESOLUTION = 0;
+    public static final PIDController X_PID_CONTROLLER = new PIDConfig(0, 0, 0, 0).getPIDController();
+    public static final PIDController THETA_PID_CONTROLLER = new PIDConfig(0, 0, 0, 0).getPIDController();
 
     public static final MotorConfig LeadLeftMotor = new MotorConfig(
       0,
       20, 
       true, 
-      poplib.src.main.java.poplib.motor.Mode.COAST
+      Mode.COAST
     );
 
-    public static final MotorConfig FollowLeftMotor = new MotorConfig(
-      0,
-      20, 
-      true, 
-      poplib.src.main.java.poplib.motor.Mode.COAST
+    public static final FollowerConfig FollowLeftMotor = new FollowerConfig(
+      LeadLeftMotor,
+      false,
+      0
     );
 
     public static final MotorConfig LeadRightMotor = new MotorConfig(
       0,
       20, 
       false, 
-      poplib.src.main.java.poplib.motor.Mode.COAST
+      Mode.COAST
     );
 
-    public static final MotorConfig FollowRightMotor = new MotorConfig(
-      0,
-      20, 
-      false, 
-      poplib.src.main.java.poplib.motor.Mode.COAST
+    public static final FollowerConfig FollowRightMotor = new FollowerConfig(
+      LeadRightMotor,
+      false,
+      0
     );
+
+    public static final PIDConfig X_PID_CONFIG = new PIDConfig(0.0, 0.0, 0.0);
+    public static final PIDConfig THETA_PID_CONFIG = new PIDConfig(0.0, 0.0, 0.0);
 
   }
 
