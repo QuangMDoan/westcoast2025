@@ -25,6 +25,8 @@ public final class Constants {
 
   public static class DriveConstants {
 
+    public static final boolean PID_TUNING_MODE = false;
+
     public static final int DRIVE_MOVE_SPEED = 1;
     public static final int DRIVE_REVERSE_SPEED = -1;
     public static final double TRACK_WIDTH = 0;
@@ -59,8 +61,6 @@ public final class Constants {
       0
     );
 
-    public static final PIDConfig X_PID_CONFIG = new PIDConfig(0.0, 0.0, 0.0);
-    public static final PIDConfig THETA_PID_CONFIG = new PIDConfig(0.0, 0.0, 0.0);
 
   }
 

@@ -8,7 +8,6 @@ import com.revrobotics.spark.SparkMax;
 import com.studica.frc.AHRS;
 
 import edu.wpi.first.math.controller.PIDController;
-import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -16,15 +15,12 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.DifferentialDriveKinematics;
 import edu.wpi.first.math.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.math.kinematics.DifferentialDriveWheelSpeeds;
-import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
+import frc.robot.Constants.DriveConstants;
 import poplib.src.main.java.poplib.control.PIDConfig;
-import poplib.src.main.java.poplib.sensors.gyro.Gyro;
 import poplib.src.main.java.poplib.smart_dashboard.PIDTuning;
-import poplib.src.main.java.poplib.swerve.swerve_templates.BaseSwerve;
 
 public class Drive extends SubsystemBase {
   private SparkMax leadRightMotor;
@@ -38,9 +34,9 @@ public class Drive extends SubsystemBase {
   private static PIDController xpid;
   private static PIDController thetapid;
   private static double turnSetpoint;
-  // private static PIDTuning angleTuning;
-  // private static PIDTuning driveTuning;
-
+  private static double Setpoint;
+  protected PIDTuning leftTuning;
+  protected PIDTuning rightTuning;
   private static Drive instance;
 
   public static Drive getInstance() {
@@ -51,26 +47,30 @@ public class Drive extends SubsystemBase {
   }
 
   public Drive() {
-    leadLeftMotor = Constants.DriveConstants.LeadLeftMotor.createSparkMax();
-    followLeftMotor = Constants.DriveConstants.FollowLeftMotor.createSparkMax();
-    leadRightMotor = Constants.DriveConstants.LeadRightMotor.createSparkMax();
-    followRightMotor = Constants.DriveConstants.FollowRightMotor.createSparkMax();
+    leadLeftMotor = DriveConstants.LeadLeftMotor.createSparkMax();
+    followLeftMotor = DriveConstants.FollowLeftMotor.createSparkMax();
+    leadRightMotor = DriveConstants.LeadRightMotor.createSparkMax();
+    followRightMotor = DriveConstants.FollowRightMotor.createSparkMax();
+
+    this.rightTuning = new PIDTuning("Right Motors", DriveConstants.LeadRightMotor.pid, DriveConstants.PID_TUNING_MODE);
+    this.leftTuning = new PIDTuning("Left Motors", DriveConstants.LeadLeftMotor.pid, DriveConstants.PID_TUNING_MODE);
     
-    kinematics = new DifferentialDriveKinematics(Constants.DriveConstants.TRACK_WIDTH);
+    kinematics = new DifferentialDriveKinematics(DriveConstants.TRACK_WIDTH);
     
-   
     gyro = new AHRS(null);
     gyro.reset();
     odometry = new DifferentialDriveOdometry
     (gyro.getRotation2d(), leadLeftMotor.getEncoder().getPosition(), 
     leadRightMotor.getEncoder().getPosition(), new Pose2d(0,0, new Rotation2d()));
+    //.getPosition returns anmount of motor turns but we need distance traveled
 
-    xpid = Constants.DriveConstants.X_PID_CONFIG.getPIDController(); 
-    thetapid = Constants.DriveConstants.THETA_PID_CONFIG.getPIDController();
+    // xpid = DriveConstants.X_PID_CONFIG.getPIDController(); 
+    // thetapid = DriveConstants.THETA_PID_CONFIG.getPIDController();
 
     turnSetpoint = 0.0;
     thetapid.setSetpoint(turnSetpoint);
-
+    xpid.setSetpoint(Setpoint);
+    
     drive = new DifferentialDrive(leadLeftMotor, leadRightMotor);
   }
 
@@ -79,44 +79,28 @@ public class Drive extends SubsystemBase {
         gyro.getRotation2d(), leadLeftMotor.getEncoder().getPosition(), leadRightMotor.getEncoder().getPosition());
   }
 
-  // public Command moveForward() {
-  //   return run(() -> {
-  //     leadLeftMotor.set(Constants.DriveConstants.DRIVEMOVESPEED);
-  //     leadRightMotor.set(Constants.DriveConstants.DRIVEMOVESPEED);
-  //   });
-  // }
-  // public Command moveBackward() {
-  //   return run(() -> {
-  //     leadLeftMotor.set(Constants.DriveConstants.DRIVEREVERSESPEED);
-  //     leadRightMotor.set(Constants.DriveConstants.DRIVEREVERSESPEED);
-  //   });
-  // }
-  // public Command rotateLeft() {
-  //   return run(() -> {
-  //     leadLeftMotor.set(Constants.DriveConstants.DRIVEREVERSESPEED);
-  //     leadRightMotor.set(Constants.DriveConstants.DRIVEMOVESPEED);
-  //   });
-  // }
-  // public Command rotateRight() {
-  //   return run(() -> {
-  //     leadLeftMotor.set(Constants.DriveConstants.DRIVEMOVESPEED);
-  //     leadRightMotor.set(Constants.DriveConstants.DRIVEREVERSESPEED);
-  //   });
-  // }
-
-  // field oriented
   public Command turn(double angle){
-    return run(() -> {
-      leadLeftMotor.set(thetapid.calculate(gyro.getAngle())*Constants.DriveConstants.DRIVE_MOVE_SPEED);
-    }).alongWith(run(() -> {
-      leadRightMotor.set(thetapid.calculate(gyro.getAngle())*Constants.DriveConstants.DRIVE_REVERSE_SPEED);
+    return runOnce(() -> {
+      thetapid.setSetpoint(angle);
+      thetapid.calculate(gyro.getAngle());
+    }).andThen(run(() -> {
+      leadLeftMotor.set(thetapid.calculate(gyro.getAngle())*DriveConstants.DRIVE_MOVE_SPEED);
+    })).alongWith(run(() -> {
+      leadRightMotor.set(thetapid.calculate(gyro.getAngle())*DriveConstants.DRIVE_REVERSE_SPEED);
+    })).until(thetapid::atSetpoint).
+    andThen(runOnce(() -> {
+      leadLeftMotor.stopMotor();
+      leadRightMotor.stopMotor();
     }));
   }
 
   public Command pleaseDrive(double velocity){
-    return run(() -> {
+    return runOnce(() -> {
+      xpid.setSetpoint(velocity);
+      xpid.calculate(leadLeftMotor.get());
+    }).andThen(run( () -> {
       leadLeftMotor.set(xpid.calculate(velocity));
-    }).alongWith(run(() -> {
+    })).alongWith(run(() -> {
       leadRightMotor.set(xpid.calculate(velocity));
     }));
   }
@@ -125,13 +109,10 @@ public class Drive extends SubsystemBase {
   //   drive.arcadeDrive(xSpeed, zRotation);
   // }
 
-  public void drive(Translation2d vector, double rotation) {
-
-  }
-  
   @Override
   public void periodic() {
     updateOdometry();
-
+    leftTuning.updatePID(leadLeftMotor);
+    rightTuning.updatePID(leadRightMotor);
   }
 }

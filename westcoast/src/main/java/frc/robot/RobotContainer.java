@@ -11,7 +11,6 @@ import frc.robot.subsystems.Drive;
 import poplib.src.main.java.poplib.controllers.oi.XboxOI;
 
 
-
 public class RobotContainer {
   private Drive drive = new Drive();
   XboxOI oi;
@@ -34,12 +33,14 @@ public class RobotContainer {
     //       (oi.getDriverButton(XboxController.Button.kRightBumper) ? 1 : 0.5), 
     //   () -> -oi.getDriverTrigger(XboxController.Axis.kRightX),
     //   drive));
+
     drive.setDefaultCommand(
       new DriveCommand(() -> driveController.getLeftY(), () -> driveController.getRightX(), drive));
 
-    oi.getDriverButton(XboxController.Axis.kLeftY.value).onChange(
-      
-    );
+    oi.getDriverButton(XboxController.Axis.kLeftY.value).onChange(drive.pleaseDrive(XboxController.Axis.kLeftY.value));
+
+    oi.getDriverButton(XboxController.Axis.kRightY.value).onChange(drive.turn(XboxController.Axis.kRightY.value));
+
   }
 
   /**
